@@ -7,6 +7,7 @@
 	"scripts": {
 		"dev": "tsx --env-file=.env src/index.ts",
 		"start": "tsx --env-file=.env src/index.ts",
+		"test-mode": "TEST_MODE=true tsx --env-file=.env src/index.ts",
 		"build": "tsc",
 		"type-check": "tsc --noEmit",
 		"lint": "eslint . --ext .ts,.js",

@@ -10,8 +10,9 @@ A TypeScript Discord bot for tracking and storing channel messages with SQLite d
 - 💬 **Message Tracking**: Track messages from specific Discord channels
 - 🎯 **User Filtering**: Filter messages by specific user ID using the reporter system
 - ⚡ **Slash Commands**: `/update`, `/track`, and `/reporter` commands
+- 🧪 **Test Mode**: Database operations logged instead of executed for safe testing and debugging
 - ✨ **Code Quality Tools**: ESLint for linting, Prettier for formatting
-- 🧪 **Comprehensive Tests**: Jest testing framework with full coverage
+- ✅ **Comprehensive Tests**: Jest testing framework with full coverage
 - 🚀 **Development Ready**: Pre-configured with best practices
 
 ## Requirements
@@ -77,6 +78,27 @@ Start the bot:
 ```bash
 yarn start
 ```
+
+### Test Mode
+
+Run the bot in test mode where database operations are logged instead of executed:
+
+```bash
+yarn test-mode
+```
+
+In test mode:
+
+- 🧪 **Database operations are logged**: All database writes (INSERT, UPDATE) are logged to console instead of writing to the database
+- 📊 **Database reads return mock data**: Query operations return empty results or default values
+- 🔍 **Perfect for debugging**: See exactly what database operations would be performed without affecting your data
+- ⚡ **Safe experimentation**: Test bot functionality without creating or modifying database records
+- 🎯 **Development friendly**: Ideal for testing Discord bot interactions without database side effects
+
+Test mode is activated when either:
+
+- `TEST_MODE=true` environment variable is set
+- `NODE_ENV=test` environment variable is set (automatically used during testing)
 
 ### Commands
 
@@ -256,6 +278,7 @@ cfia-recall-bot/
 - **User Filtering**: Only track messages from specified user IDs (reporter system)
 - **Persistent Settings**: Configuration persists between bot restarts
 - **Batch Processing**: Efficiently handles large message histories
+- **Test Mode**: Database operations can be logged instead of executed for safe testing
 - **Error Handling**: Graceful error handling and logging
 - **Type Safety**: Full TypeScript type checking
 - **Testing**: Comprehensive test coverage with mocked dependencies

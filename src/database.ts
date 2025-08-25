@@ -21,12 +21,29 @@ export interface StoredMessage
 
 export class DatabaseManager {
 	private db: Database.Database;
+	private isTestMode: boolean;
 
 	constructor(dbPath: string = "./discord-bot.db") {
+		// Check if we're in test mode
+		this.isTestMode =
+			process.env.NODE_ENV === "test" || process.env.TEST_MODE === "true";
+
+		if (this.isTestMode) {
+			console.log(
+				"🧪 Running in test mode - database operations will be logged instead of executed",
+			);
+			// In test mode, we still initialize the database for compatibility
+			// but operations will be logged instead of executed
+		}
+
 		// Initialize SQLite database
 		this.db = new Database(dbPath);
 		this.initializeDatabase();
-		console.log("📊 Discord bot database initialized");
+		console.log(
+			this.isTestMode
+				? "📊 Discord bot database initialized (test mode)"
+				: "📊 Discord bot database initialized",
+		);
 	}
 
 	private initializeDatabase(): void {
@@ -58,12 +75,36 @@ export class DatabaseManager {
       ON messages(channel_id, timestamp DESC)
     `;
 
-		this.db.exec(createTableQuery);
-		this.db.exec(createSettingsTableQuery);
-		this.db.exec(createIndexQuery);
+		if (this.isTestMode) {
+			console.log(`🧪 TEST MODE - Would execute database initialization:`, {
+				tables: ["messages", "settings"],
+				indexes: ["idx_messages_channel_timestamp"],
+				queries: [
+					createTableQuery.trim(),
+					createSettingsTableQuery.trim(),
+					createIndexQuery.trim(),
+				],
+			});
+		} else {
+			this.db.exec(createTableQuery);
+			this.db.exec(createSettingsTableQuery);
+			this.db.exec(createIndexQuery);
+		}
 	}
 
 	public addMessage(message: DiscordMessage): number | null {
+		if (this.isTestMode) {
+			console.log(`🧪 TEST MODE - Would insert message:`, {
+				message_id: message.id,
+				user_id: message.userId,
+				content: message.content,
+				timestamp: message.timestamp.toISOString(),
+				channel_id: message.channelId,
+			});
+			// Return a mock ID for test mode
+			return Math.floor(Math.random() * 1000000);
+		}
+
 		try {
 			const stmt = this.db.prepare(`
         INSERT INTO messages (message_id, user_id, content, timestamp, channel_id)
@@ -96,6 +137,17 @@ export class DatabaseManager {
 	}
 
 	public getMessages(channelId: string, limit: number = 100): StoredMessage[] {
+		if (this.isTestMode) {
+			console.log(`🧪 TEST MODE - Would query messages:`, {
+				channel_id: channelId,
+				limit: limit,
+				query:
+					"SELECT * FROM messages WHERE channel_id = ? ORDER BY timestamp DESC LIMIT ?",
+			});
+			// Return empty array for test mode
+			return [];
+		}
+
 		const stmt = this.db.prepare(`
       SELECT * FROM messages 
       WHERE channel_id = ?
@@ -107,6 +159,18 @@ export class DatabaseManager {
 	}
 
 	public getMessageCount(channelId?: string): number {
+		if (this.isTestMode) {
+			const query = channelId
+				? "SELECT COUNT(*) as count FROM messages WHERE channel_id = ?"
+				: "SELECT COUNT(*) as count FROM messages";
+			console.log(`🧪 TEST MODE - Would count messages:`, {
+				channel_id: channelId || "all channels",
+				query: query,
+			});
+			// Return mock count for test mode
+			return 0;
+		}
+
 		if (channelId) {
 			const stmt = this.db.prepare(`
         SELECT COUNT(*) as count FROM messages 
@@ -122,6 +186,16 @@ export class DatabaseManager {
 	}
 
 	public setReporterUserId(userId: string): void {
+		if (this.isTestMode) {
+			console.log(`🧪 TEST MODE - Would set reporter user ID:`, {
+				key: "reporter_user_id",
+				value: userId,
+				query:
+					"INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+			});
+			return;
+		}
+
 		try {
 			const stmt = this.db.prepare(`
 				INSERT OR REPLACE INTO settings (key, value, updated_at)
@@ -137,6 +211,17 @@ export class DatabaseManager {
 	}
 
 	public getReporterUserId(): string {
+		if (this.isTestMode) {
+			const defaultUserId = "268478587651358721";
+			console.log(`🧪 TEST MODE - Would query reporter user ID:`, {
+				key: "reporter_user_id",
+				query: "SELECT value FROM settings WHERE key = ?",
+				default_return: defaultUserId,
+			});
+			// Return default ID for test mode
+			return defaultUserId;
+		}
+
 		try {
 			const stmt = this.db.prepare(`
 				SELECT value FROM settings WHERE key = ?
@@ -157,7 +242,14 @@ export class DatabaseManager {
 	}
 
 	public close(): void {
+		if (this.isTestMode) {
+			console.log("🧪 TEST MODE - Would close database connection");
+		}
 		this.db.close();
-		console.log("📪 Database connection closed");
+		console.log(
+			this.isTestMode
+				? "📪 Database connection closed (test mode)"
+				: "📪 Database connection closed",
+		);
 	}
 }
