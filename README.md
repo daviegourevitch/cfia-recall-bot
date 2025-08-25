@@ -184,6 +184,8 @@ Generates fun statistics about recall reasons from tracked messages. This comman
 - **Smart matching**: Handles case-insensitive matching and text cleanup
 - **Example patterns**: "recalled due to Salmonella" → extracts "Salmonella"
 - **Special recognition**: Adds extra context for common food safety issues (Salmonella, Listeria, E. coli)
+- **Message length capping**: Automatically truncates long statistics to fit Discord's 2000 character limit while preserving the most important information
+- **Intelligent truncation**: When there are many recall reasons, shows top reasons first and indicates how many additional reasons were truncated
 
 The stats command provides insights into food recall patterns, helping identify the most common safety issues in tracked recall announcements.
 

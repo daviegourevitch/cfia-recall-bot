@@ -553,7 +553,10 @@ export class DiscordBot {
 				([, a], [, b]) => b - a,
 			);
 
-			// Create the fun stats message with emojis
+			// Discord character limit is 2000, aim for 1900 to be safe
+			const maxLength = 1900;
+
+			// Create the header section
 			let statsMessage = `🏆 **RECALL STATS EXTRAVAGANZA!** 🏆\n\n`;
 			statsMessage += `📈 **Total Messages Analyzed:** ${messages.length.toLocaleString()}\n`;
 			statsMessage += `🚨 **Total Recall Messages Found:** ${totalRecallMessages}\n\n`;
@@ -574,38 +577,87 @@ export class DiscordBot {
 				"◆",
 			];
 
-			sortedReasons.forEach(([reason, count], index) => {
-				let emoji;
-				if (index < 3) {
-					emoji = medals[index];
-				} else {
-					emoji = otherEmojis[Math.min(index - 3, otherEmojis.length - 1)];
-				}
-
-				const percentage = ((count / totalRecallMessages) * 100).toFixed(1);
-				statsMessage += `${emoji} **${reason}** - ${count} times (${percentage}%)\n`;
-			});
-
-			statsMessage += `\n🎯 **Fun Facts:**\n`;
-			statsMessage += `• Most common reason: **${sortedReasons[0][0]}** 📊\n`;
-			statsMessage += `• Unique recall types: **${sortedReasons.length}** 🎨\n`;
+			// Footer sections that will be added at the end
+			let funFactsSection = `\n🎯 **Fun Facts:**\n`;
+			funFactsSection += `• Most common reason: **${sortedReasons[0][0]}** 📊\n`;
+			funFactsSection += `• Unique recall types: **${sortedReasons.length}** 🎨\n`;
 			if (sortedReasons.length > 1) {
-				statsMessage += `• Runner-up reason: **${sortedReasons[1][0]}** 🥈\n`;
+				funFactsSection += `• Runner-up reason: **${sortedReasons[1][0]}** 🥈\n`;
 			}
 
 			// Add some fun emojis based on top reasons
+			let specialEmoji = "";
 			if (sortedReasons[0][0].toLowerCase().includes("salmonella")) {
-				statsMessage += `\n🦠 Looks like Salmonella is quite the troublemaker! 🧪`;
+				specialEmoji = `\n🦠 Looks like Salmonella is quite the troublemaker! 🧪`;
 			} else if (sortedReasons[0][0].toLowerCase().includes("listeria")) {
-				statsMessage += `\n🧫 Listeria strikes again! Stay safe out there! 🛡️`;
+				specialEmoji = `\n🧫 Listeria strikes again! Stay safe out there! 🛡️`;
 			} else if (
 				sortedReasons[0][0].toLowerCase().includes("e. coli") ||
 				sortedReasons[0][0].toLowerCase().includes("e.coli")
 			) {
-				statsMessage += `\n🦠 E. coli causing chaos as usual! 💥`;
+				specialEmoji = `\n🦠 E. coli causing chaos as usual! 💥`;
 			}
 
-			statsMessage += `\n\n📊 *Powered by CFIA Recall Bot* 🤖✨`;
+			const footer = `\n\n📊 *Powered by CFIA Recall Bot* 🤖✨`;
+
+			// Calculate space available for recall reasons
+			const reservedSpace =
+				funFactsSection.length + specialEmoji.length + footer.length;
+			const availableSpace = maxLength - statsMessage.length - reservedSpace;
+
+			// Add recall reasons until we run out of space
+			let reasonsSection = "";
+			let truncated = false;
+
+			for (let i = 0; i < sortedReasons.length; i++) {
+				const [reason, count] = sortedReasons[i];
+				let emoji;
+				if (i < 3) {
+					emoji = medals[i];
+				} else {
+					emoji = otherEmojis[Math.min(i - 3, otherEmojis.length - 1)];
+				}
+
+				const percentage = ((count / totalRecallMessages) * 100).toFixed(1);
+				const reasonLine = `${emoji} **${reason}** - ${count} times (${percentage}%)\n`;
+
+				// Check if adding this reason would exceed our limit
+				if (reasonsSection.length + reasonLine.length + 50 > availableSpace) {
+					// 50 char buffer for truncation message
+					truncated = true;
+					const remainingReasons = sortedReasons.length - i;
+					reasonsSection += `\n📋 *...and ${remainingReasons} more reason${remainingReasons > 1 ? "s" : ""} (message truncated)*`;
+					break;
+				}
+
+				reasonsSection += reasonLine;
+			}
+
+			// Assemble the final message
+			statsMessage += reasonsSection;
+			statsMessage += funFactsSection;
+			statsMessage += specialEmoji;
+			statsMessage += footer;
+
+			// Final safety check - if still too long, truncate more aggressively
+			if (statsMessage.length > maxLength) {
+				const overage = statsMessage.length - maxLength + 50; // +50 for truncation message
+				const lines = statsMessage.split("\n");
+				let currentLength = 0;
+				let safeLines: string[] = [];
+
+				for (const line of lines) {
+					if (currentLength + line.length + 1 + overage <= maxLength) {
+						safeLines.push(line);
+						currentLength += line.length + 1; // +1 for newline
+					} else {
+						safeLines.push("📋 *Message truncated due to length limit*");
+						break;
+					}
+				}
+
+				statsMessage = safeLines.join("\n");
+			}
 
 			return statsMessage;
 		} catch (error) {
