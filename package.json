@@ -5,8 +5,8 @@
 	"main": "src/index.ts",
 	"type": "module",
 	"scripts": {
-		"dev": "node --experimental-strip-types src/index.ts",
-		"start": "node --experimental-strip-types src/index.ts",
+		"dev": "tsx --env-file=.env src/index.ts",
+		"start": "tsx --env-file=.env src/index.ts",
 		"build": "tsc",
 		"type-check": "tsc --noEmit",
 		"lint": "eslint . --ext .ts,.js",
@@ -42,6 +42,7 @@
 		"jest": "^30.0.5",
 		"prettier": "^3.6.2",
 		"ts-jest": "^29.4.1",
+		"tsx": "^4.20.5",
 		"typescript": "^5.9.2",
 		"typescript-eslint": "^8.40.0"
 	},

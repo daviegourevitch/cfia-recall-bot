@@ -16,7 +16,7 @@ A TypeScript Discord bot for tracking and storing channel messages with SQLite d
 
 ## Requirements
 
-- Node.js v22.6.0 or higher
+- Node.js v22.18.0 or higher (latest LTS recommended)
 - Yarn package manager
 - Discord bot token and application
 
@@ -192,14 +192,17 @@ CREATE TABLE settings (
 );
 ```
 
-## Native TypeScript Support
+## Modern TypeScript Support (2025)
 
-This project leverages Node.js v22+'s experimental native TypeScript support:
+This project uses the latest 2025 TypeScript standards with minimal dependencies:
 
-- **No compilation step needed** for development
-- Uses `--experimental-strip-types` flag for type stripping
-- Full TypeScript syntax support including interfaces, types, and modern ES modules
+- **No compilation step needed** for development or production
+- Uses `tsx` - lightweight TypeScript runner for clean extensionless imports
+- Native Node.js `.env` file loading (no dotenv package needed)
+- Full TypeScript syntax support with NodeNext module resolution
 - Jest configured for TypeScript testing
+
+**Why tsx?** While Node.js v22+ has native TypeScript support, it still requires `.js` extensions for ES module imports. tsx provides the cleanest developer experience with just one dev dependency.
 
 ## Project Structure
 
