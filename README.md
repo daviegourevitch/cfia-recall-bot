@@ -7,9 +7,9 @@ A TypeScript Discord bot for tracking and storing channel messages with SQLite d
 - 🤖 **Native TypeScript Support**: Uses Node.js v22+ experimental TypeScript support (no compilation needed!)
 - 📊 **SQLite Database**: Stores and manages Discord message data locally
 - 🔄 **Type Safety**: Full TypeScript type definitions
-- 💬 **Message Tracking**: Track messages from specific Discord channels
+- 💬 **Message Tracking**: Track messages from specific Discord channels and threads
 - 🎯 **User Filtering**: Filter messages by specific user ID using the reporter system
-- ⚡ **Slash Commands**: `/update`, `/track`, and `/reporter` commands
+- ⚡ **Slash Commands**: `/update`, `/track`, and `/reporter` commands with full thread support
 - 🧪 **Test Mode**: Database operations logged instead of executed for safe testing and debugging
 - ✨ **Code Quality Tools**: ESLint for linting, Prettier for formatting
 - ✅ **Comprehensive Tests**: Jest testing framework with full coverage
@@ -100,27 +100,43 @@ Test mode is activated when either:
 - `TEST_MODE=true` environment variable is set
 - `NODE_ENV=test` environment variable is set (automatically used during testing)
 
+### Thread Support
+
+🧵 **Full Thread Compatibility**: All bot commands now work seamlessly in both regular Discord channels and thread channels, including:
+
+- **Public Threads**: Created from regular text channels
+- **Private Threads**: Private discussion threads
+- **Announcement Threads**: Threads in announcement channels
+
+The bot automatically detects whether it's running in a channel or thread and adapts its behavior accordingly:
+
+- Console logs show whether operations are performed on "channel" or "thread"
+- Command responses are contextually appropriate ("Started tracking this thread" vs "Started tracking this channel")
+- All database operations work identically regardless of channel type
+
 ### Commands
 
 The bot supports these slash commands:
 
 #### `/update`
 
-Fetches and stores all message history from the current channel. This command:
+Fetches and stores all message history from the current channel or thread. This command:
 
 - Retrieves all available message history
 - Stores messages in the SQLite database
 - Reports how many messages were fetched and stored
 - Handles duplicate messages gracefully
+- **Works in both regular channels and thread channels**
 
 #### `/track`
 
-Toggles message tracking for the current channel. This command:
+Toggles message tracking for the current channel or thread. This command:
 
 - Starts/stops real-time message tracking
 - Only tracks non-bot messages
 - Only stores messages from the configured reporter user ID
 - Automatically stores new messages as they arrive
+- **Works in both regular channels and thread channels**
 
 #### `/reporter [userid]`
 
@@ -276,6 +292,7 @@ cfia-recall-bot/
 
 - **Message Deduplication**: Prevents storing duplicate messages
 - **User Filtering**: Only track messages from specified user IDs (reporter system)
+- **Thread Support**: Full compatibility with Discord threads (public, private, announcement)
 - **Persistent Settings**: Configuration persists between bot restarts
 - **Batch Processing**: Efficiently handles large message histories
 - **Test Mode**: Database operations can be logged instead of executed for safe testing

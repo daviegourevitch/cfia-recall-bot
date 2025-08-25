@@ -280,7 +280,12 @@ describe("DiscordBot", () => {
 	describe("slash commands", () => {
 		const mockInteraction = {
 			commandName: "update",
-			channel: { id: "channel123", messages: { fetch: jest.fn() } },
+			channel: {
+				id: "channel123",
+				type: 0, // GuildText channel type
+				messages: { fetch: jest.fn() },
+				isThread: () => false,
+			},
 			reply: jest.fn(),
 			deferReply: jest.fn(),
 			editReply: jest.fn(),
@@ -356,7 +361,7 @@ describe("DiscordBot", () => {
 			await bot["handleSlashCommand"](interactionWithoutChannel as never);
 
 			expect(mockInteraction.reply).toHaveBeenCalledWith({
-				content: "❌ This command must be used in a channel",
+				content: "❌ This command must be used in a text channel or thread",
 				ephemeral: true,
 			});
 		});
@@ -403,7 +408,12 @@ describe("DiscordBot", () => {
 		test("should handle message update batching", async () => {
 			const mockInteraction = {
 				commandName: "update",
-				channel: { id: "channel123", messages: { fetch: jest.fn() } },
+				channel: {
+					id: "channel123",
+					type: 0, // GuildText channel type
+					messages: { fetch: jest.fn() },
+					isThread: () => false,
+				},
 				deferReply: jest.fn(),
 				editReply: jest.fn(),
 			};
@@ -451,7 +461,11 @@ describe("DiscordBot", () => {
 		test("should handle /reporter command without options", async () => {
 			const mockInteraction = {
 				commandName: "reporter",
-				channel: { id: "channel123" },
+				channel: {
+					id: "channel123",
+					type: 0, // GuildText channel type
+					isThread: () => false,
+				},
 				reply: jest.fn(),
 				options: { getString: jest.fn().mockReturnValue(null) },
 			};
@@ -471,7 +485,12 @@ describe("DiscordBot", () => {
 		test("should handle mixed duplicate and new messages in update", async () => {
 			const mockInteraction = {
 				commandName: "update",
-				channel: { id: "channel123", messages: { fetch: jest.fn() } },
+				channel: {
+					id: "channel123",
+					type: 0, // GuildText channel type
+					messages: { fetch: jest.fn() },
+					isThread: () => false,
+				},
 				deferReply: jest.fn(),
 				editReply: jest.fn(),
 			};

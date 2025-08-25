@@ -40,8 +40,13 @@ async function main(): Promise<void> {
 		await bot.start();
 		console.log("✅ Discord bot is now running!");
 		console.log("📝 Available commands:");
-		console.log("  /update - Fetch and store all message history from channel");
-		console.log("  /track  - Start/stop tracking new messages in channel");
+		console.log(
+			"  /update   - Fetch and store all message history from channel or thread",
+		);
+		console.log(
+			"  /track    - Start/stop tracking new messages in channel or thread",
+		);
+		console.log("  /reporter - Set or view the user ID to track messages from");
 	} catch (error) {
 		console.error("❌ Failed to start Discord bot:", error);
 		process.exit(1);
