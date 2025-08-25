@@ -71,6 +71,9 @@ export class DiscordBot {
 				case "track":
 					await this.handleTrackCommand(interaction);
 					break;
+				case "reporter":
+					await this.handleReporterCommand(interaction);
+					break;
 				default:
 					await interaction.reply({
 						content: "❌ Unknown command",
@@ -186,12 +189,46 @@ export class DiscordBot {
 		);
 	}
 
+	private async handleReporterCommand(
+		interaction: ChatInputCommandInteraction,
+	): Promise<void> {
+		const userId = interaction.options.getString("userid");
+
+		try {
+			if (userId) {
+				// Set new reporter user ID
+				this.db.setReporterUserId(userId);
+				await interaction.reply({
+					content: `✅ Reporter user ID set to: ${userId}`,
+					ephemeral: true,
+				});
+			} else {
+				// Show current reporter user ID
+				const currentUserId = this.db.getReporterUserId();
+				await interaction.reply({
+					content: `📊 Current reporter user ID: ${currentUserId}`,
+					ephemeral: true,
+				});
+			}
+		} catch (error) {
+			console.error("❌ Error in reporter command:", error);
+			await interaction.reply({
+				content: "❌ An error occurred while executing the command",
+				ephemeral: true,
+			});
+		}
+	}
+
 	private handleNewMessage(message: Message): void {
 		// Don't track bot messages
 		if (message.author.bot) return;
 
 		// Only process messages from tracked channels
 		if (!this.trackedChannels.has(message.channelId)) return;
+
+		// Only process messages from the reporter user ID
+		const reporterUserId = this.db.getReporterUserId();
+		if (message.author.id !== reporterUserId) return;
 
 		const discordMessage: DiscordMessage = {
 			id: message.id,
@@ -213,6 +250,16 @@ export class DiscordBot {
 			new SlashCommandBuilder()
 				.setName("track")
 				.setDescription("Start/stop tracking new messages in this channel")
+				.toJSON(),
+			new SlashCommandBuilder()
+				.setName("reporter")
+				.setDescription("Set or view the user ID to track messages from")
+				.addStringOption((option) =>
+					option
+						.setName("userid")
+						.setDescription("The user ID to track messages from")
+						.setRequired(false)
+				)
 				.toJSON(),
 		];
 

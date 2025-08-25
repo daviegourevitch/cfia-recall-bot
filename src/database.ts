@@ -43,6 +43,15 @@ export class DatabaseManager {
       )
     `;
 
+		// Create settings table for storing configuration
+		const createSettingsTableQuery = `
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
 		// Create index for faster queries
 		const createIndexQuery = `
       CREATE INDEX IF NOT EXISTS idx_messages_channel_timestamp
@@ -50,6 +59,7 @@ export class DatabaseManager {
     `;
 
 		this.db.exec(createTableQuery);
+		this.db.exec(createSettingsTableQuery);
 		this.db.exec(createIndexQuery);
 	}
 
@@ -108,6 +118,39 @@ export class DatabaseManager {
 			const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM messages`);
 			const result = stmt.get() as { count: number };
 			return result.count;
+		}
+	}
+
+	public setReporterUserId(userId: string): void {
+		try {
+			const stmt = this.db.prepare(`
+				INSERT OR REPLACE INTO settings (key, value, updated_at)
+				VALUES (?, ?, CURRENT_TIMESTAMP)
+			`);
+
+			stmt.run("reporter_user_id", userId);
+			console.log(`✅ Reporter user ID set to: ${userId}`);
+		} catch (error) {
+			console.error("❌ Error setting reporter user ID:", error);
+			throw error;
+		}
+	}
+
+	public getReporterUserId(): string {
+		try {
+			const stmt = this.db.prepare(`
+				SELECT value FROM settings WHERE key = ?
+			`);
+
+			const result = stmt.get("reporter_user_id") as { value: string } | undefined;
+			
+			// Return the stored value or the default
+			const userId = result?.value || "268478587651358721";
+			console.log(`📊 Current reporter user ID: ${userId}`);
+			return userId;
+		} catch (error) {
+			console.error("❌ Error getting reporter user ID:", error);
+			throw error;
 		}
 	}
 

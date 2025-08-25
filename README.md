@@ -8,7 +8,8 @@ A TypeScript Discord bot for tracking and storing channel messages with SQLite d
 - 📊 **SQLite Database**: Stores and manages Discord message data locally
 - 🔄 **Type Safety**: Full TypeScript type definitions
 - 💬 **Message Tracking**: Track messages from specific Discord channels
-- ⚡ **Slash Commands**: `/update` and `/track` commands
+- 🎯 **User Filtering**: Filter messages by specific user ID using the reporter system
+- ⚡ **Slash Commands**: `/update`, `/track`, and `/reporter` commands
 - ✨ **Code Quality Tools**: ESLint for linting, Prettier for formatting
 - 🧪 **Comprehensive Tests**: Jest testing framework with full coverage
 - 🚀 **Development Ready**: Pre-configured with best practices
@@ -96,7 +97,18 @@ Toggles message tracking for the current channel. This command:
 
 - Starts/stops real-time message tracking
 - Only tracks non-bot messages
+- Only stores messages from the configured reporter user ID
 - Automatically stores new messages as they arrive
+
+#### `/reporter [userid]`
+
+Manages the reporter user ID filtering system. This command:
+
+- **With userid parameter**: Sets the user ID to track messages from
+- **Without parameter**: Shows the current reporter user ID
+- **Default value**: `268478587651358721`
+- **Persistence**: Settings are saved to the database and persist between bot restarts
+- **Filtering**: Only messages from this user ID will be tracked and stored
 
 ### Code Quality
 
@@ -161,6 +173,7 @@ The bot uses SQLite to store message information. The database file (`discord-bo
 ### Database Schema
 
 ```sql
+-- Messages table for storing Discord messages
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   message_id TEXT UNIQUE NOT NULL,
@@ -169,6 +182,13 @@ CREATE TABLE messages (
   timestamp TEXT NOT NULL,
   channel_id TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Settings table for storing bot configuration
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -207,6 +227,7 @@ cfia-recall-bot/
 
 - Handles SQLite database operations
 - Manages message storage and retrieval
+- Manages bot settings (reporter user ID configuration)
 - Provides type-safe interfaces
 - Handles duplicate message detection
 
@@ -220,6 +241,8 @@ cfia-recall-bot/
 ### Key Features
 
 - **Message Deduplication**: Prevents storing duplicate messages
+- **User Filtering**: Only track messages from specified user IDs (reporter system)
+- **Persistent Settings**: Configuration persists between bot restarts
 - **Batch Processing**: Efficiently handles large message histories
 - **Error Handling**: Graceful error handling and logging
 - **Type Safety**: Full TypeScript type checking
