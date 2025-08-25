@@ -151,6 +151,13 @@ yarn test:watch
 yarn test:coverage
 ```
 
+The test suite includes:
+
+- **Unit Tests**: Comprehensive coverage of `DatabaseManager` and `DiscordBot` classes
+- **Integration Tests**: Slash command handling, message processing, and channel tracking
+- **Edge Case Testing**: Error handling, batch processing, and boundary conditions
+- **Mocked Dependencies**: Clean isolation using Jest mocks for Discord.js and SQLite
+
 > **Note**: Tests use Jest with ES modules support. The configuration includes `NODE_OPTIONS='--experimental-vm-modules'` to enable Jest's experimental ES modules support, allowing proper testing of TypeScript ES modules with `.js` import extensions.
 
 **Run All Checks:**
