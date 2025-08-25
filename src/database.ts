@@ -142,8 +142,10 @@ export class DatabaseManager {
 				SELECT value FROM settings WHERE key = ?
 			`);
 
-			const result = stmt.get("reporter_user_id") as { value: string } | undefined;
-			
+			const result = stmt.get("reporter_user_id") as
+				| { value: string }
+				| undefined;
+
 			// Return the stored value or the default
 			const userId = result?.value || "268478587651358721";
 			console.log(`📊 Current reporter user ID: ${userId}`);

@@ -356,7 +356,7 @@ describe("DatabaseManager", () => {
 	describe("cleanup", () => {
 		test("should close database connection", () => {
 			const mockClose = jest.fn();
-			(dbManager["db"] as any).close = mockClose;
+			(dbManager["db"] as unknown as { close: jest.Mock }).close = mockClose;
 
 			dbManager.close();
 
@@ -469,7 +469,18 @@ describe("DiscordBot", () => {
 	});
 
 	describe("message event handling", () => {
-		let mockMessage: any;
+		interface MockMessage {
+			id: string;
+			author: {
+				id: string;
+				bot: boolean;
+			};
+			content: string;
+			createdAt: Date;
+			channelId: string;
+		}
+
+		let mockMessage: MockMessage;
 
 		beforeEach(() => {
 			mockMessage = {
@@ -496,7 +507,7 @@ describe("DiscordBot", () => {
 				.mockReturnValue(1);
 
 			// Simulate message event
-			bot["handleNewMessage"](mockMessage);
+			bot["handleNewMessage"](mockMessage as never);
 
 			expect(addMessageSpy).toHaveBeenCalledWith({
 				id: "message123",
@@ -511,7 +522,7 @@ describe("DiscordBot", () => {
 			// Don't track the channel
 			const addMessageSpy = jest.spyOn(bot["db"], "addMessage");
 
-			bot["handleNewMessage"](mockMessage);
+			bot["handleNewMessage"](mockMessage as never);
 
 			expect(addMessageSpy).not.toHaveBeenCalled();
 		});
@@ -522,7 +533,7 @@ describe("DiscordBot", () => {
 
 			const addMessageSpy = jest.spyOn(bot["db"], "addMessage");
 
-			bot["handleNewMessage"](mockMessage);
+			bot["handleNewMessage"](mockMessage as never);
 
 			expect(addMessageSpy).not.toHaveBeenCalled();
 		});
@@ -538,7 +549,7 @@ describe("DiscordBot", () => {
 				.spyOn(bot["db"], "addMessage")
 				.mockReturnValue(1);
 
-			bot["handleNewMessage"](mockMessage);
+			bot["handleNewMessage"](mockMessage as never);
 
 			expect(addMessageSpy).toHaveBeenCalledWith(
 				expect.objectContaining({ content: "" }),
@@ -555,7 +566,7 @@ describe("DiscordBot", () => {
 
 			const addMessageSpy = jest.spyOn(bot["db"], "addMessage");
 
-			bot["handleNewMessage"](mockMessage);
+			bot["handleNewMessage"](mockMessage as never);
 
 			expect(addMessageSpy).not.toHaveBeenCalled();
 		});
@@ -570,7 +581,7 @@ describe("DiscordBot", () => {
 				.spyOn(bot["db"], "addMessage")
 				.mockReturnValue(1);
 
-			bot["handleNewMessage"](mockMessage);
+			bot["handleNewMessage"](mockMessage as never);
 
 			expect(addMessageSpy).toHaveBeenCalledWith({
 				id: "message123",
@@ -583,7 +594,27 @@ describe("DiscordBot", () => {
 	});
 
 	describe("slash command handling", () => {
-		let mockInteraction: any;
+		interface MockInteraction {
+			commandName: string;
+			channel: {
+				id: string;
+				messages: {
+					fetch: jest.Mock;
+				};
+			} | null;
+			reply: jest.Mock;
+			deferReply: jest.Mock;
+			editReply: jest.Mock;
+			followUp: jest.Mock;
+			replied: boolean;
+			deferred: boolean;
+			isChatInputCommand: () => boolean;
+			options?: {
+				getString: jest.Mock;
+			};
+		}
+
+		let mockInteraction: MockInteraction;
 
 		beforeEach(() => {
 			mockInteraction = {
@@ -600,19 +631,29 @@ describe("DiscordBot", () => {
 				followUp: jest.fn(),
 				replied: false,
 				deferred: false,
-				isChatInputCommand: () => true,
+				isChatInputCommand: (): boolean => true,
 			};
 		});
 
 		describe("/update command", () => {
+			// Define MockMessage type for reuse across tests
+			type MockMessage = {
+				id: string;
+				author: { id: string };
+				content: string;
+				createdAt: Date;
+				channelId: string;
+			};
+
 			beforeEach(() => {
 				mockInteraction.commandName = "update";
 			});
 
 			test("should handle update command successfully", async () => {
 				// Create a mock collection with Discord.js-like behavior
+
 				const mockMessages = {
-					values: () => [
+					values: (): MockMessage[] => [
 						{
 							id: "msg1",
 							author: { id: "user1" },
@@ -628,7 +669,7 @@ describe("DiscordBot", () => {
 							channelId: "channel123",
 						},
 					],
-					last: () => ({
+					last: (): MockMessage => ({
 						id: "msg2",
 						author: { id: "user2" },
 						content: "Message 2",
@@ -638,8 +679,8 @@ describe("DiscordBot", () => {
 					size: 2,
 				};
 
-				mockInteraction.channel.messages.fetch.mockResolvedValue(
-					mockMessages as any,
+				mockInteraction.channel!.messages.fetch.mockResolvedValue(
+					mockMessages as never,
 				);
 
 				// Mock database
@@ -647,7 +688,7 @@ describe("DiscordBot", () => {
 					.spyOn(bot["db"], "addMessage")
 					.mockReturnValue(1);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.deferReply).toHaveBeenCalledWith({
 					ephemeral: true,
@@ -660,14 +701,14 @@ describe("DiscordBot", () => {
 
 			test("should handle update command with no messages", async () => {
 				const emptyMessages = {
-					values: () => [],
+					values: (): MockMessage[] => [],
 					size: 0,
 				};
-				mockInteraction.channel.messages.fetch.mockResolvedValue(
-					emptyMessages as any,
+				mockInteraction.channel!.messages.fetch.mockResolvedValue(
+					emptyMessages as never,
 				);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.editReply).toHaveBeenCalledWith(
 					expect.stringContaining("0 messages, stored 0 new messages"),
@@ -676,7 +717,7 @@ describe("DiscordBot", () => {
 
 			test("should handle update command with duplicate messages", async () => {
 				const mockMessages = {
-					values: () => [
+					values: (): MockMessage[] => [
 						{
 							id: "msg1",
 							author: { id: "user1" },
@@ -685,7 +726,7 @@ describe("DiscordBot", () => {
 							channelId: "channel123",
 						},
 					],
-					last: () => ({
+					last: (): MockMessage => ({
 						id: "msg1",
 						author: { id: "user1" },
 						content: "Message 1",
@@ -695,14 +736,14 @@ describe("DiscordBot", () => {
 					size: 1,
 				};
 
-				mockInteraction.channel.messages.fetch.mockResolvedValue(
-					mockMessages as any,
+				mockInteraction.channel!.messages.fetch.mockResolvedValue(
+					mockMessages as never,
 				);
 
 				// Mock database to return null (duplicate)
 				jest.spyOn(bot["db"], "addMessage").mockReturnValue(null);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.editReply).toHaveBeenCalledWith(
 					expect.stringContaining("1 messages, stored 0 new messages"),
@@ -710,11 +751,11 @@ describe("DiscordBot", () => {
 			});
 
 			test("should handle update command error", async () => {
-				mockInteraction.channel.messages.fetch.mockRejectedValue(
-					new Error("Discord API Error"),
+				mockInteraction.channel!.messages.fetch.mockRejectedValue(
+					new Error("Discord API Error") as never,
 				);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.editReply).toHaveBeenCalledWith(
 					"❌ An error occurred while updating message history.",
@@ -724,7 +765,7 @@ describe("DiscordBot", () => {
 			test("should handle update command without channel", async () => {
 				mockInteraction.channel = null;
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
 					content: "❌ This command must be used in a channel",
@@ -741,7 +782,7 @@ describe("DiscordBot", () => {
 			test("should start tracking when channel not tracked", async () => {
 				expect(bot.isTracking("channel123")).toBe(false);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(bot.isTracking("channel123")).toBe(true);
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
@@ -754,7 +795,7 @@ describe("DiscordBot", () => {
 				bot.startTracking("channel123");
 				expect(bot.isTracking("channel123")).toBe(true);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(bot.isTracking("channel123")).toBe(false);
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
@@ -766,7 +807,7 @@ describe("DiscordBot", () => {
 			test("should handle track command without channel", async () => {
 				mockInteraction.channel = null;
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
 					content: "❌ This command must be used in a channel",
@@ -785,13 +826,13 @@ describe("DiscordBot", () => {
 
 			test("should set new reporter user ID", async () => {
 				const newUserId = "987654321";
-				mockInteraction.options.getString.mockReturnValue(newUserId);
+				mockInteraction.options!.getString.mockReturnValue(newUserId);
 
 				const setReporterSpy = jest
 					.spyOn(bot["db"], "setReporterUserId")
 					.mockImplementation(() => {});
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(setReporterSpy).toHaveBeenCalledWith(newUserId);
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
@@ -801,14 +842,14 @@ describe("DiscordBot", () => {
 			});
 
 			test("should show current reporter user ID when no argument provided", async () => {
-				mockInteraction.options.getString.mockReturnValue(null);
+				mockInteraction.options!.getString.mockReturnValue(null);
 
 				const getCurrentUserId = "268478587651358721";
 				jest
 					.spyOn(bot["db"], "getReporterUserId")
 					.mockReturnValue(getCurrentUserId);
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
 					content: `📊 Current reporter user ID: ${getCurrentUserId}`,
@@ -818,13 +859,13 @@ describe("DiscordBot", () => {
 
 			test("should handle database errors when setting reporter", async () => {
 				const newUserId = "987654321";
-				mockInteraction.options.getString.mockReturnValue(newUserId);
+				mockInteraction.options!.getString.mockReturnValue(newUserId);
 
 				jest.spyOn(bot["db"], "setReporterUserId").mockImplementation(() => {
 					throw new Error("Database error");
 				});
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
 					content: "❌ An error occurred while executing the command",
@@ -833,13 +874,13 @@ describe("DiscordBot", () => {
 			});
 
 			test("should handle database errors when getting current reporter", async () => {
-				mockInteraction.options.getString.mockReturnValue(null);
+				mockInteraction.options!.getString.mockReturnValue(null);
 
 				jest.spyOn(bot["db"], "getReporterUserId").mockImplementation(() => {
 					throw new Error("Database error");
 				});
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
 					content: "❌ An error occurred while executing the command",
@@ -850,7 +891,7 @@ describe("DiscordBot", () => {
 			test("should handle reporter command without channel", async () => {
 				mockInteraction.channel = null;
 
-				await bot["handleSlashCommand"](mockInteraction);
+				await bot["handleSlashCommand"](mockInteraction as never);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
 					content: "❌ This command must be used in a channel",
@@ -862,7 +903,7 @@ describe("DiscordBot", () => {
 		test("should handle unknown command", async () => {
 			mockInteraction.commandName = "unknown";
 
-			await bot["handleSlashCommand"](mockInteraction);
+			await bot["handleSlashCommand"](mockInteraction as never);
 
 			expect(mockInteraction.reply).toHaveBeenCalledWith({
 				content: "❌ Unknown command",
@@ -875,7 +916,7 @@ describe("DiscordBot", () => {
 
 			// This should not throw even with an unknown command
 			await expect(
-				bot["handleSlashCommand"](mockInteraction),
+				bot["handleSlashCommand"](mockInteraction as never),
 			).resolves.not.toThrow();
 
 			// Should respond with an error message
@@ -893,7 +934,7 @@ describe("DiscordBot", () => {
 				.mockResolvedValue();
 			const loginSpy = jest
 				.spyOn(bot["client"], "login")
-				.mockResolvedValue("token" as any);
+				.mockResolvedValue("token" as never);
 
 			await bot.start();
 
@@ -938,7 +979,7 @@ describe("DiscordBot", () => {
 				content: "test",
 				createdAt: new Date(),
 				channelId: "channel123",
-			} as any;
+			} as Parameters<(typeof bot)["handleNewMessage"]>[0];
 
 			// This will throw since we don't have error handling in handleNewMessage
 			expect(() => bot["handleNewMessage"](mockMessage)).toThrow(
