@@ -9,7 +9,7 @@ import {
 	Message,
 	TextChannel,
 } from "discord.js";
-import { DatabaseManager, DiscordMessage } from "./database";
+import { DatabaseManager, DiscordMessage } from "./database.js";
 
 export class DiscordBot {
 	private client: Client;
@@ -258,7 +258,7 @@ export class DiscordBot {
 					option
 						.setName("userid")
 						.setDescription("The user ID to track messages from")
-						.setRequired(false)
+						.setRequired(false),
 				)
 				.toJSON(),
 		];

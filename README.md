@@ -151,6 +151,8 @@ yarn test:watch
 yarn test:coverage
 ```
 
+> **Note**: Tests use Jest with ES modules support. The configuration includes `NODE_OPTIONS='--experimental-vm-modules'` to enable Jest's experimental ES modules support, allowing proper testing of TypeScript ES modules with `.js` import extensions.
+
 **Run All Checks:**
 
 ```bash

@@ -1,5 +1,3 @@
-import { DatabaseManager } from "../database";
-import { DiscordBot } from "../discordBot";
 import {
 	jest,
 	describe,
@@ -8,6 +6,8 @@ import {
 	beforeEach,
 	afterEach,
 } from "@jest/globals";
+import { DatabaseManager } from "../database.js";
+import { DiscordBot } from "../discordBot.js";
 
 // Mock discord.js
 jest.mock("discord.js", () => ({
@@ -540,10 +540,12 @@ describe("DiscordBot", () => {
 
 		test("should only track messages from reporter user ID", () => {
 			bot.startTracking("channel123");
-			
+
 			// Set reporter user ID to a different user
-			jest.spyOn(bot["db"], "getReporterUserId").mockReturnValue("different-user");
-			
+			jest
+				.spyOn(bot["db"], "getReporterUserId")
+				.mockReturnValue("different-user");
+
 			const addMessageSpy = jest.spyOn(bot["db"], "addMessage");
 
 			bot["handleNewMessage"](mockMessage);
@@ -553,10 +555,10 @@ describe("DiscordBot", () => {
 
 		test("should track messages when user matches reporter ID", () => {
 			bot.startTracking("channel123");
-			
+
 			// Set reporter user ID to match the message author
 			jest.spyOn(bot["db"], "getReporterUserId").mockReturnValue("user123");
-			
+
 			const addMessageSpy = jest
 				.spyOn(bot["db"], "addMessage")
 				.mockReturnValue(1);
@@ -777,9 +779,11 @@ describe("DiscordBot", () => {
 			test("should set new reporter user ID", async () => {
 				const newUserId = "987654321";
 				mockInteraction.options.getString.mockReturnValue(newUserId);
-				
-				const setReporterSpy = jest.spyOn(bot["db"], "setReporterUserId").mockImplementation(() => {});
-				
+
+				const setReporterSpy = jest
+					.spyOn(bot["db"], "setReporterUserId")
+					.mockImplementation(() => {});
+
 				await bot["handleSlashCommand"](mockInteraction);
 
 				expect(setReporterSpy).toHaveBeenCalledWith(newUserId);
@@ -791,10 +795,12 @@ describe("DiscordBot", () => {
 
 			test("should show current reporter user ID when no argument provided", async () => {
 				mockInteraction.options.getString.mockReturnValue(null);
-				
+
 				const getCurrentUserId = "268478587651358721";
-				jest.spyOn(bot["db"], "getReporterUserId").mockReturnValue(getCurrentUserId);
-				
+				jest
+					.spyOn(bot["db"], "getReporterUserId")
+					.mockReturnValue(getCurrentUserId);
+
 				await bot["handleSlashCommand"](mockInteraction);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
@@ -806,11 +812,11 @@ describe("DiscordBot", () => {
 			test("should handle database errors when setting reporter", async () => {
 				const newUserId = "987654321";
 				mockInteraction.options.getString.mockReturnValue(newUserId);
-				
+
 				jest.spyOn(bot["db"], "setReporterUserId").mockImplementation(() => {
 					throw new Error("Database error");
 				});
-				
+
 				await bot["handleSlashCommand"](mockInteraction);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({
@@ -821,11 +827,11 @@ describe("DiscordBot", () => {
 
 			test("should handle database errors when getting current reporter", async () => {
 				mockInteraction.options.getString.mockReturnValue(null);
-				
+
 				jest.spyOn(bot["db"], "getReporterUserId").mockImplementation(() => {
 					throw new Error("Database error");
 				});
-				
+
 				await bot["handleSlashCommand"](mockInteraction);
 
 				expect(mockInteraction.reply).toHaveBeenCalledWith({

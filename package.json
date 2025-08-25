@@ -13,9 +13,9 @@
 		"lint:fix": "eslint . --ext .ts,.js --fix",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"test": "jest",
-		"test:watch": "jest --watch",
-		"test:coverage": "jest --coverage",
+		"test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+		"test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
+		"test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
 		"check-all": "yarn type-check && yarn lint && yarn format:check && yarn test"
 	},
 	"keywords": [

@@ -1,5 +1,5 @@
-import { DiscordBot } from "./discordBot";
-import { DatabaseManager } from "./database";
+import { DiscordBot } from "./discordBot.js";
+import { DatabaseManager } from "./database.js";
 
 // Environment variables
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
