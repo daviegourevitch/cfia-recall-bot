@@ -376,6 +376,50 @@ describe("DiscordBot", () => {
 				ephemeral: true,
 			});
 		});
+
+		test("should handle /update command in thread", async () => {
+			const mockThread = {
+				id: "thread123",
+				type: 11, // PublicThread type
+				messages: { fetch: jest.fn() },
+				isThread: () => true,
+			};
+			const threadInteraction = {
+				commandName: "update",
+				channel: mockThread,
+				reply: jest.fn(),
+				deferReply: jest.fn(),
+				editReply: jest.fn(),
+				options: { getString: jest.fn() },
+			};
+
+			const mockMessages = {
+				values: () => [
+					{
+						id: "msg1",
+						author: { id: "user1" },
+						content: "thread test",
+						createdAt: new Date(),
+						channelId: "thread123",
+					},
+				],
+				last: () => ({ id: "msg1" }),
+				size: 1,
+			};
+			mockThread.messages.fetch.mockResolvedValue(mockMessages as never);
+			jest.spyOn(bot["db"], "addMessage").mockReturnValue(1);
+
+			await bot["handleSlashCommand"](threadInteraction as never);
+
+			expect(threadInteraction.deferReply).toHaveBeenCalledWith({
+				ephemeral: true,
+			});
+			expect(threadInteraction.editReply).toHaveBeenCalledWith(
+				expect.stringContaining(
+					"1 messages, stored 1 new messages from this thread",
+				),
+			);
+		});
 	});
 
 	test("should start and stop bot properly", async () => {

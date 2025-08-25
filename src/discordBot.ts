@@ -9,6 +9,7 @@ import {
 	Message,
 	TextChannel,
 	AnyThreadChannel,
+	ChannelType,
 } from "discord.js";
 import { DatabaseManager, DiscordMessage } from "./database.js";
 
@@ -21,6 +22,7 @@ export class DiscordBot {
 	private token: string;
 	private clientId: string;
 	private trackedChannels: Set<string> = new Set();
+	private debugMode: boolean = process.env.DEBUG_MODE === "true";
 
 	constructor(token: string, clientId: string, dbPath?: string) {
 		this.token = token;
@@ -41,30 +43,63 @@ export class DiscordBot {
 
 	// Helper method to check if channel supports messaging (regular channels or threads)
 	private isMessageableChannel(channel: any): channel is MessageableChannel {
+		console.log(`🔍 DEBUG: isMessageableChannel called with:`, {
+			hasChannel: !!channel,
+			type: channel?.type,
+			hasIsThread: typeof channel?.isThread === "function",
+			isThreadResult:
+				typeof channel?.isThread === "function" ? channel.isThread() : "N/A",
+			hasMessages: !!channel?.messages,
+			hasMessagesFetch: typeof channel?.messages?.fetch === "function",
+		});
+
 		if (!channel) {
+			console.log(`🔍 DEBUG: isMessageableChannel: No channel provided`);
 			return false;
 		}
 
-		// Check for regular text channels (GuildText = 0, GuildAnnouncement = 5)
-		if (channel.type === 0 || channel.type === 5) {
+		// Check for regular text channels
+		if (
+			channel.type === ChannelType.GuildText ||
+			channel.type === ChannelType.GuildAnnouncement
+		) {
+			console.log(
+				`🔍 DEBUG: isMessageableChannel: Regular text channel (type ${channel.type})`,
+			);
 			return true;
 		}
 
-		// Check for threads (either by type or isThread method)
-		if (channel.type === 11 || channel.type === 12 || channel.type === 10) {
+		// Check for threads
+		if (
+			channel.type === ChannelType.PublicThread ||
+			channel.type === ChannelType.PrivateThread ||
+			channel.type === ChannelType.AnnouncementThread
+		) {
+			console.log(
+				`🔍 DEBUG: isMessageableChannel: Thread by type (type ${channel.type})`,
+			);
 			return true; // Thread types
 		}
 
 		// Fallback to isThread method if available (for runtime detection)
 		if (typeof channel.isThread === "function" && channel.isThread()) {
+			console.log(
+				`🔍 DEBUG: isMessageableChannel: Thread by isThread() method`,
+			);
 			return true;
 		}
 
 		// If channel has messages property, assume it's messageable (test compatibility)
 		if (channel.messages && typeof channel.messages.fetch === "function") {
+			console.log(
+				`🔍 DEBUG: isMessageableChannel: Has messages.fetch (test compatibility)`,
+			);
 			return true;
 		}
 
+		console.log(
+			`🔍 DEBUG: isMessageableChannel: Channel not recognized as messageable`,
+		);
 		return false;
 	}
 
@@ -89,19 +124,166 @@ export class DiscordBot {
 		const { commandName, channel } = interaction;
 		let workingChannel = channel;
 
-		if (!workingChannel && interaction.channelId && interaction.guild) {
-			try {
-				const workingChannel = await interaction.guild.channels.fetch(
-					interaction.channelId,
+		if (this.debugMode) {
+			console.log(
+				`🔍 DEBUG: handleSlashCommand called with command: ${commandName}`,
+			);
+			console.log(`🔍 DEBUG: Initial channel:`, {
+				id: channel?.id,
+				type: channel?.type,
+				hasChannel: !!channel,
+				channelId: interaction.channelId,
+				hasGuild: !!interaction.guild,
+				guildId: interaction.guild?.id,
+				hasClient: !!this.client,
+				isThread:
+					typeof channel?.isThread === "function" ? channel.isThread() : "N/A",
+			});
+		}
+
+		// Try to get channel if we don't have one but have channelId
+		if (!workingChannel && interaction.channelId) {
+			if (this.debugMode) {
+				console.log(
+					`🔍 DEBUG: Attempting to fetch channel using channelId: ${interaction.channelId}`,
 				);
-			} catch (error) {
-				console.error("Failed to fetch channel from guild:", error);
+			}
+			try {
+				// First try via guild if available
+				if (interaction.guild) {
+					console.log(`🔍 DEBUG: Fetching via guild...`);
+					const fetchedChannel = await interaction.guild.channels.fetch(
+						interaction.channelId,
+					);
+					console.log(`🔍 DEBUG: Fetched channel via guild:`, {
+						id: fetchedChannel?.id,
+						type: fetchedChannel?.type,
+						hasFetched: !!fetchedChannel,
+						isThread:
+							typeof fetchedChannel?.isThread === "function"
+								? fetchedChannel.isThread()
+								: "N/A",
+					});
+					if (this.isMessageableChannel(fetchedChannel)) {
+						workingChannel = fetchedChannel as MessageableChannel;
+						console.log(
+							`🔍 DEBUG: Using guild-fetched channel as workingChannel`,
+						);
+					}
+				}
+				// Fallback: try via client directly
+				if (!workingChannel) {
+					console.log(`🔍 DEBUG: Fetching via client.channels directly...`);
+					console.log(
+						`🔍 DEBUG: Client ready state:`,
+						this.client.readyAt !== null,
+					);
+					const fetchedChannel = await this.client.channels.fetch(
+						interaction.channelId,
+					);
+					console.log(`🔍 DEBUG: Fetched channel via client:`, {
+						id: fetchedChannel?.id,
+						type: fetchedChannel?.type,
+						hasFetched: !!fetchedChannel,
+						isThread:
+							typeof fetchedChannel?.isThread === "function"
+								? fetchedChannel.isThread()
+								: "N/A",
+						hasMessages: !!(fetchedChannel as any)?.messages,
+						channelString: fetchedChannel?.toString(),
+					});
+
+					if (fetchedChannel) {
+						console.log(
+							`🔍 DEBUG: About to check if channel is messageable...`,
+						);
+						const isMessageable = this.isMessageableChannel(fetchedChannel);
+						console.log(
+							`🔍 DEBUG: isMessageableChannel returned:`,
+							isMessageable,
+						);
+
+						if (isMessageable) {
+							workingChannel = fetchedChannel as MessageableChannel;
+							console.log(
+								`🔍 DEBUG: Using client-fetched channel as workingChannel`,
+							);
+						} else {
+							console.log(
+								`🔍 DEBUG: Client-fetched channel failed isMessageableChannel check`,
+							);
+						}
+					} else {
+						console.log(
+							`🔍 DEBUG: client.channels.fetch returned null/undefined`,
+						);
+					}
+				}
+			} catch (error: any) {
+				console.error("🔍 DEBUG: Error caught in channel fetching:", {
+					error: error?.message,
+					stack: error?.stack,
+					channelId: interaction.channelId,
+					hasGuild: !!interaction.guild,
+					clientReady: this.client.readyAt !== null,
+				});
 			}
 		}
 
-		if (!this.isMessageableChannel(workingChannel)) {
+		// Extra debug: log what we ended up with
+		if (!workingChannel) {
+			console.log(`🔍 DEBUG: Still no workingChannel after all attempts`, {
+				originalChannel: !!channel,
+				channelId: interaction.channelId,
+				hasGuild: !!interaction.guild,
+				clientReady: this.client.readyAt !== null,
+			});
+		}
+
+		console.log(`🔍 DEBUG: Final workingChannel:`, {
+			id: workingChannel?.id,
+			type: workingChannel?.type,
+			hasWorkingChannel: !!workingChannel,
+			isThread:
+				typeof workingChannel?.isThread === "function"
+					? workingChannel.isThread()
+					: "N/A",
+		});
+
+		const isMessageable = this.isMessageableChannel(workingChannel);
+		if (this.debugMode) {
+			console.log(`🔍 DEBUG: isMessageableChannel result: ${isMessageable}`);
+		}
+
+		if (!isMessageable) {
+			console.log(
+				`🔍 DEBUG: Channel failed isMessageableChannel check - sending error`,
+			);
+
+			// Provide more specific error message based on what we know
+			let errorMessage =
+				"❌ This command must be used in a text channel or thread";
+
+			if (interaction.channelId && !workingChannel) {
+				errorMessage =
+					"❌ **Bot cannot access this thread/channel**\n\n" +
+					"**To fix this issue:**\n" +
+					"1️⃣ **Check Server Permissions** (if you're an admin):\n" +
+					"   • Go to **Server Settings > Roles**\n" +
+					"   • Find the bot's role and ensure it has:\n" +
+					"     - ✅ Read Messages\n" +
+					"     - ✅ Read Message History\n" +
+					"     - ✅ Send Messages in Threads\n\n" +
+					"2️⃣ **Check Channel Permissions**:\n" +
+					"   • Right-click this channel/thread → **Settings**\n" +
+					"   • Go to **Permissions** tab\n" +
+					"   • Make sure the bot isn't **denied** access\n\n" +
+					"3️⃣ **For Private Threads**: Add the bot to the thread manually\n\n" +
+					"💡 **Need help?** Contact a server admin to check bot permissions.";
+			}
+
 			await interaction.reply({
-				content: "❌ This command must be used in a text channel or thread",
+				content: errorMessage,
 				ephemeral: true,
 			});
 			return;

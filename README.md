@@ -100,6 +100,29 @@ Test mode is activated when either:
 - `TEST_MODE=true` environment variable is set
 - `NODE_ENV=test` environment variable is set (automatically used during testing)
 
+### Debug Mode
+
+Enable detailed debug logging to troubleshoot channel access issues:
+
+```bash
+DEBUG_MODE=true yarn start
+```
+
+In debug mode:
+
+- 🔍 **Detailed Channel Logging**: See exactly what channel information Discord provides
+- 🚨 **Permission Error Details**: Detailed error messages when bot can't access channels/threads
+- 📡 **API Call Tracing**: Track Discord API calls and responses
+- 🎯 **Thread Detection**: See how the bot identifies and validates thread channels
+
+Debug mode is useful when:
+
+- Bot can't access certain channels or threads
+- Slash commands fail with permission errors
+- Troubleshooting server permission configurations
+
+**Note:** Debug mode produces verbose console output. Only enable when troubleshooting.
+
 ### Thread Support
 
 🧵 **Full Thread Compatibility**: All bot commands now work seamlessly in both regular Discord channels and thread channels, including:
