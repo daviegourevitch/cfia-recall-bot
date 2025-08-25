@@ -305,6 +305,9 @@ export class DiscordBot {
 				case "reporter":
 					await this.handleReporterCommand(interaction);
 					break;
+				case "stats":
+					await this.handleStatsCommand(interaction);
+					break;
 				default:
 					await interaction.reply({
 						content: "❌ Unknown command",
@@ -387,6 +390,26 @@ export class DiscordBot {
 			console.log(
 				`✅ Update complete for ${channelType} ${channel.id}: ${totalFetched} fetched, ${totalStored} stored`,
 			);
+
+			// Auto-generate and send stats after update
+			try {
+				const statsMessage = this.generateStatsMessage();
+				if (statsMessage) {
+					await interaction.followUp({
+						content: `📊 **Updated Statistics:**\n\n${statsMessage}`,
+						ephemeral: false,
+					});
+				} else {
+					await interaction.followUp({
+						content:
+							"📊 No recall statistics available yet. Messages need to contain 'recalled due to...' to be counted.",
+						ephemeral: true,
+					});
+				}
+			} catch (statsError) {
+				console.error("❌ Error generating stats after update:", statsError);
+				// Don't fail the entire update command if stats fail
+			}
 		} catch (error) {
 			console.error("❌ Error in update command:", error);
 			await interaction.editReply(
@@ -473,6 +496,148 @@ export class DiscordBot {
 		this.db.addMessage(discordMessage);
 	}
 
+	private generateStatsMessage(): string | null {
+		try {
+			// Get the reporter user ID
+			const reporterUserId = this.db.getReporterUserId();
+
+			// Get all messages from the reporter user
+			const messages = this.db.getMessagesByUserId(reporterUserId);
+
+			if (messages.length === 0) {
+				return null; // No messages to analyze
+			}
+
+			// Parse messages and count recall reasons
+			const recallReasons: { [key: string]: number } = {};
+			let totalRecallMessages = 0;
+
+			for (const message of messages) {
+				// Look for messages containing "recalled due to"
+				const recallMatch = message.content.match(
+					/recalled due to\s+(.+?)(?:\n|$|\*\*)/i,
+				);
+
+				if (recallMatch) {
+					totalRecallMessages++;
+					let reason = recallMatch[1].trim();
+
+					// Clean up the reason text
+					reason = reason.replace(/\*\*/g, ""); // Remove bold markdown
+					reason = reason.replace(/[.,:;!?]+$/, ""); // Remove trailing punctuation
+					reason = reason.trim();
+
+					// Normalize common variations (case-insensitive matching)
+					const normalizedReason = reason.toLowerCase();
+
+					// Find if we already have this reason (case-insensitive)
+					let existingKey = Object.keys(recallReasons).find(
+						(key) => key.toLowerCase() === normalizedReason,
+					);
+
+					if (existingKey) {
+						recallReasons[existingKey]++;
+					} else {
+						// Use the original case for the key
+						recallReasons[reason] = 1;
+					}
+				}
+			}
+
+			if (totalRecallMessages === 0) {
+				return null; // No recall messages found
+			}
+
+			// Sort reasons by count (descending)
+			const sortedReasons = Object.entries(recallReasons).sort(
+				([, a], [, b]) => b - a,
+			);
+
+			// Create the fun stats message with emojis
+			let statsMessage = `🏆 **RECALL STATS EXTRAVAGANZA!** 🏆\n\n`;
+			statsMessage += `📈 **Total Messages Analyzed:** ${messages.length.toLocaleString()}\n`;
+			statsMessage += `🚨 **Total Recall Messages Found:** ${totalRecallMessages}\n\n`;
+			statsMessage += `🥇 **TOP RECALL REASONS** 🥇\n`;
+			statsMessage += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+			const medals = ["🥇", "🥈", "🥉"];
+			const otherEmojis = [
+				"🏅",
+				"🎖️",
+				"🏵️",
+				"⭐",
+				"✨",
+				"💫",
+				"🌟",
+				"🔸",
+				"🔹",
+				"◆",
+			];
+
+			sortedReasons.forEach(([reason, count], index) => {
+				let emoji;
+				if (index < 3) {
+					emoji = medals[index];
+				} else {
+					emoji = otherEmojis[Math.min(index - 3, otherEmojis.length - 1)];
+				}
+
+				const percentage = ((count / totalRecallMessages) * 100).toFixed(1);
+				statsMessage += `${emoji} **${reason}** - ${count} times (${percentage}%)\n`;
+			});
+
+			statsMessage += `\n🎯 **Fun Facts:**\n`;
+			statsMessage += `• Most common reason: **${sortedReasons[0][0]}** 📊\n`;
+			statsMessage += `• Unique recall types: **${sortedReasons.length}** 🎨\n`;
+			if (sortedReasons.length > 1) {
+				statsMessage += `• Runner-up reason: **${sortedReasons[1][0]}** 🥈\n`;
+			}
+
+			// Add some fun emojis based on top reasons
+			if (sortedReasons[0][0].toLowerCase().includes("salmonella")) {
+				statsMessage += `\n🦠 Looks like Salmonella is quite the troublemaker! 🧪`;
+			} else if (sortedReasons[0][0].toLowerCase().includes("listeria")) {
+				statsMessage += `\n🧫 Listeria strikes again! Stay safe out there! 🛡️`;
+			} else if (
+				sortedReasons[0][0].toLowerCase().includes("e. coli") ||
+				sortedReasons[0][0].toLowerCase().includes("e.coli")
+			) {
+				statsMessage += `\n🦠 E. coli causing chaos as usual! 💥`;
+			}
+
+			statsMessage += `\n\n📊 *Powered by CFIA Recall Bot* 🤖✨`;
+
+			return statsMessage;
+		} catch (error) {
+			console.error("❌ Error generating stats:", error);
+			return null;
+		}
+	}
+
+	private async handleStatsCommand(
+		interaction: ChatInputCommandInteraction,
+	): Promise<void> {
+		await interaction.deferReply({ ephemeral: false });
+
+		try {
+			const statsMessage = this.generateStatsMessage();
+
+			if (!statsMessage) {
+				await interaction.editReply(
+					"📊 No recall messages found! Messages need to contain the phrase 'recalled due to...' to be counted. Make sure to set the reporter user ID and update message history first!",
+				);
+				return;
+			}
+
+			await interaction.editReply(statsMessage);
+		} catch (error) {
+			console.error("❌ Error in stats command:", error);
+			await interaction.editReply(
+				"❌ An error occurred while generating stats. Please try again later.",
+			);
+		}
+	}
+
 	public async registerCommands(): Promise<void> {
 		const commands = [
 			new SlashCommandBuilder()
@@ -495,6 +660,12 @@ export class DiscordBot {
 						.setName("userid")
 						.setDescription("The user ID to track messages from")
 						.setRequired(false),
+				)
+				.toJSON(),
+			new SlashCommandBuilder()
+				.setName("stats")
+				.setDescription(
+					"Show statistics of recall reasons from tracked messages",
 				)
 				.toJSON(),
 		];

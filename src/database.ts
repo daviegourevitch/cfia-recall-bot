@@ -185,6 +185,26 @@ export class DatabaseManager {
 		}
 	}
 
+	public getMessagesByUserId(userId: string): StoredMessage[] {
+		if (this.isTestMode) {
+			console.log(`🧪 TEST MODE - Would query messages by user ID:`, {
+				user_id: userId,
+				query:
+					"SELECT * FROM messages WHERE user_id = ? ORDER BY timestamp DESC",
+			});
+			// Return empty array for test mode
+			return [];
+		}
+
+		const stmt = this.db.prepare(`
+			SELECT * FROM messages 
+			WHERE user_id = ?
+			ORDER BY timestamp DESC
+		`);
+
+		return stmt.all(userId) as StoredMessage[];
+	}
+
 	public setReporterUserId(userId: string): void {
 		if (this.isTestMode) {
 			console.log(`🧪 TEST MODE - Would set reporter user ID:`, {

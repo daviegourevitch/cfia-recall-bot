@@ -289,6 +289,7 @@ describe("DiscordBot", () => {
 			reply: jest.fn(),
 			deferReply: jest.fn(),
 			editReply: jest.fn(),
+			followUp: jest.fn(),
 			options: { getString: jest.fn() },
 		};
 
@@ -390,6 +391,7 @@ describe("DiscordBot", () => {
 				reply: jest.fn(),
 				deferReply: jest.fn(),
 				editReply: jest.fn(),
+				followUp: jest.fn(),
 				options: { getString: jest.fn() },
 			};
 
@@ -460,6 +462,7 @@ describe("DiscordBot", () => {
 				},
 				deferReply: jest.fn(),
 				editReply: jest.fn(),
+				followUp: jest.fn(),
 			};
 
 			// Mock multiple batches of messages
@@ -537,6 +540,7 @@ describe("DiscordBot", () => {
 				},
 				deferReply: jest.fn(),
 				editReply: jest.fn(),
+				followUp: jest.fn(),
 			};
 
 			const mockMessages = {

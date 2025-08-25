@@ -9,7 +9,7 @@ A TypeScript Discord bot for tracking and storing channel messages with SQLite d
 - 🔄 **Type Safety**: Full TypeScript type definitions
 - 💬 **Message Tracking**: Track messages from specific Discord channels and threads
 - 🎯 **User Filtering**: Filter messages by specific user ID using the reporter system
-- ⚡ **Slash Commands**: `/update`, `/track`, and `/reporter` commands with full thread support
+- ⚡ **Slash Commands**: `/update`, `/track`, `/reporter`, and `/stats` commands with full thread support
 - 🧪 **Test Mode**: Database operations logged instead of executed for safe testing and debugging
 - ✨ **Code Quality Tools**: ESLint for linting, Prettier for formatting
 - ✅ **Comprehensive Tests**: Jest testing framework with full coverage
@@ -149,6 +149,7 @@ Fetches and stores all message history from the current channel or thread. This 
 - Stores messages in the SQLite database
 - Reports how many messages were fetched and stored
 - Handles duplicate messages gracefully
+- **Automatically shows updated statistics** after completion
 - **Works in both regular channels and thread channels**
 
 #### `/track`
@@ -170,6 +171,21 @@ Manages the reporter user ID filtering system. This command:
 - **Default value**: `268478587651358721`
 - **Persistence**: Settings are saved to the database and persist between bot restarts
 - **Filtering**: Only messages from this user ID will be tracked and stored
+
+#### `/stats`
+
+Generates fun statistics about recall reasons from tracked messages. This command:
+
+- **Analyzes all messages**: Examines messages from the configured reporter user
+- **Parses recall text**: Searches for messages containing "recalled due to..." patterns
+- **Counts occurrences**: Tallies how often each recall reason appears
+- **Shows top reasons**: Displays results ranked by frequency with percentages
+- **Fun presentation**: Uses emojis, medals, and engaging formatting
+- **Smart matching**: Handles case-insensitive matching and text cleanup
+- **Example patterns**: "recalled due to Salmonella" → extracts "Salmonella"
+- **Special recognition**: Adds extra context for common food safety issues (Salmonella, Listeria, E. coli)
+
+The stats command provides insights into food recall patterns, helping identify the most common safety issues in tracked recall announcements.
 
 ### Code Quality
 
