@@ -1,122 +1,59 @@
-import Database from "better-sqlite3";
+import { DiscordBot } from "./discordBot";
+import { DatabaseManager } from "./database";
 
-// Define interfaces for type safety
-interface RecallData {
-	id?: number;
-	title: string;
-	date: string;
-	description: string;
-	category: string;
-	url: string;
-	created_at?: string;
-}
+// Environment variables
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
 
-class CFIARecallBot {
-	private db: Database.Database;
+async function main(): Promise<void> {
+	console.log("🚀 Starting Discord Message Tracker Bot...");
 
-	constructor(dbPath: string = "./recalls.db") {
-		// Initialize SQLite database
-		this.db = new Database(dbPath);
-		this.initializeDatabase();
-		console.log("🤖 CFIA Recall Bot initialized with SQLite database");
+	// Validate required environment variables
+	if (!DISCORD_TOKEN) {
+		console.error("❌ DISCORD_TOKEN environment variable is required");
+		process.exit(1);
 	}
 
-	private initializeDatabase(): void {
-		// Create recalls table if it doesn't exist
-		const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS recalls (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        date TEXT NOT NULL,
-        description TEXT,
-        category TEXT,
-        url TEXT UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-
-		this.db.exec(createTableQuery);
-		console.log("📊 Database initialized successfully");
+	if (!CLIENT_ID) {
+		console.error("❌ CLIENT_ID environment variable is required");
+		process.exit(1);
 	}
 
-	public addRecall(recall: RecallData): number | null {
-		try {
-			const stmt = this.db.prepare(`
-        INSERT INTO recalls (title, date, description, category, url)
-        VALUES (?, ?, ?, ?, ?)
-      `);
+	// Initialize the Discord bot
+	const bot = new DiscordBot(DISCORD_TOKEN, CLIENT_ID);
 
-			const result = stmt.run(
-				recall.title,
-				recall.date,
-				recall.description,
-				recall.category,
-				recall.url,
-			);
-
-			console.log(`✅ Added recall: ${recall.title}`);
-			return result.lastInsertRowid as number;
-		} catch (error) {
-			if (
-				error instanceof Error &&
-				error.message.includes("UNIQUE constraint failed")
-			) {
-				console.log(`⚠️  Recall already exists: ${recall.title}`);
-				return null;
-			}
-			throw error;
-		}
-	}
-
-	public getRecalls(limit: number = 10): RecallData[] {
-		const stmt = this.db.prepare(`
-      SELECT * FROM recalls 
-      ORDER BY created_at DESC 
-      LIMIT ?
-    `);
-
-		return stmt.all(limit) as RecallData[];
-	}
-
-	public close(): void {
-		this.db.close();
-		console.log("📪 Database connection closed");
-	}
-}
-
-// Example usage and demonstration
-function main(): void {
-	console.log("🚀 Starting CFIA Recall Bot...");
-
-	const bot = new CFIARecallBot();
-
-	// Example recall data
-	const exampleRecall: RecallData = {
-		title: "Test Recall - Contaminated Product",
-		date: new Date().toISOString().split("T")[0],
-		description: "This is a test recall for demonstration purposes",
-		category: "Food",
-		url: "https://recalls-rappels.canada.ca/en/alert-recall/test-recall",
-	};
-
-	// Add example recall
-	bot.addRecall(exampleRecall);
-
-	// Retrieve and display recalls
-	const recalls = bot.getRecalls();
-	console.log("\n📋 Recent recalls:");
-	recalls.forEach((recall, index) => {
-		console.log(`${index + 1}. ${recall.title} (${recall.date})`);
+	// Handle graceful shutdown
+	process.on("SIGINT", () => {
+		console.log("\n🛑 Received SIGINT, shutting down gracefully...");
+		bot.close();
+		process.exit(0);
 	});
 
-	// Clean up
-	bot.close();
-	console.log("\n✨ CFIA Recall Bot demo completed!");
+	process.on("SIGTERM", () => {
+		console.log("\n🛑 Received SIGTERM, shutting down gracefully...");
+		bot.close();
+		process.exit(0);
+	});
+
+	try {
+		// Start the bot
+		await bot.start();
+		console.log("✅ Discord bot is now running!");
+		console.log("📝 Available commands:");
+		console.log("  /update - Fetch and store all message history from channel");
+		console.log("  /track  - Start/stop tracking new messages in channel");
+	} catch (error) {
+		console.error("❌ Failed to start Discord bot:", error);
+		process.exit(1);
+	}
 }
 
 // Run the main function if this is the entry point
 if (import.meta.url === `file://${process.argv[1]}`) {
-	main();
+	main().catch((error) => {
+		console.error("❌ Unhandled error:", error);
+		process.exit(1);
+	});
 }
 
-export { CFIARecallBot, type RecallData };
+export { DiscordBot, DatabaseManager };

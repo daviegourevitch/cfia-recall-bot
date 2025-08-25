@@ -35,6 +35,9 @@ pids
 coverage/
 *.lcov
 
+# Jest
+.jest
+
 # Editor directories and files
 .vscode/
 .idea/
