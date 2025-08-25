@@ -16,7 +16,7 @@ A TypeScript Discord bot for tracking and storing channel messages with SQLite d
 ## Requirements
 
 - Node.js v22.6.0 or higher
-- Yarn package manager  
+- Yarn package manager
 - Discord bot token and application
 
 ## Installation
@@ -53,6 +53,7 @@ CLIENT_ID=your_client_id_here
 ### 3. Invite Bot to Server
 
 Use the OAuth2 URL Generator in the Discord Developer Portal to invite your bot to a server with the following permissions:
+
 - `bot` scope
 - `applications.commands` scope
 - `Send Messages` permission
@@ -81,14 +82,18 @@ yarn start
 The bot supports these slash commands:
 
 #### `/update`
+
 Fetches and stores all message history from the current channel. This command:
+
 - Retrieves all available message history
 - Stores messages in the SQLite database
 - Reports how many messages were fetched and stored
 - Handles duplicate messages gracefully
 
 #### `/track`
+
 Toggles message tracking for the current channel. This command:
+
 - Starts/stops real-time message tracking
 - Only tracks non-bot messages
 - Automatically stores new messages as they arrive
@@ -96,11 +101,13 @@ Toggles message tracking for the current channel. This command:
 ### Code Quality
 
 **Type Checking:**
+
 ```bash
 yarn type-check
 ```
 
 **Linting:**
+
 ```bash
 # Check for linting errors
 yarn lint
@@ -110,6 +117,7 @@ yarn lint:fix
 ```
 
 **Formatting:**
+
 ```bash
 # Format all files
 yarn format
@@ -119,6 +127,7 @@ yarn format:check
 ```
 
 **Testing:**
+
 ```bash
 # Run tests
 yarn test
@@ -131,6 +140,7 @@ yarn test:coverage
 ```
 
 **Run All Checks:**
+
 ```bash
 # Run type checking, linting, format checking, and tests
 yarn check-all
@@ -194,18 +204,21 @@ cfia-recall-bot/
 ## Architecture
 
 ### DatabaseManager Class
+
 - Handles SQLite database operations
 - Manages message storage and retrieval
 - Provides type-safe interfaces
 - Handles duplicate message detection
 
-### DiscordBot Class  
+### DiscordBot Class
+
 - Manages Discord client connection
 - Implements slash command handlers
 - Handles message event listening
 - Manages channel tracking state
 
 ### Key Features
+
 - **Message Deduplication**: Prevents storing duplicate messages
 - **Batch Processing**: Efficiently handles large message histories
 - **Error Handling**: Graceful error handling and logging

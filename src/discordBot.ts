@@ -8,7 +8,6 @@ import {
 	ChatInputCommandInteraction,
 	Message,
 	TextChannel,
-	Collection,
 } from "discord.js";
 import { DatabaseManager, DiscordMessage } from "./database";
 

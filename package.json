@@ -20,9 +20,9 @@
 	},
 	"keywords": [
 		"discord",
-		"bot", 
+		"bot",
 		"message-tracking",
-		"sqlite", 
+		"sqlite",
 		"typescript"
 	],
 	"author": "David Gourevitch <daviegourevitch@gmail.com>",
