@@ -41,22 +41,29 @@ export class DiscordBot {
 
 	// Helper method to check if channel supports messaging (regular channels or threads)
 	private isMessageableChannel(channel: any): channel is MessageableChannel {
-		if (!channel) return false;
+		if (!channel) {
+			return false;
+		}
 
 		// Check for regular text channels (GuildText = 0, GuildAnnouncement = 5)
-		if (channel.type === 0 || channel.type === 5) return true;
+		if (channel.type === 0 || channel.type === 5) {
+			return true;
+		}
 
 		// Check for threads (either by type or isThread method)
-		if (channel.type === 11 || channel.type === 12 || channel.type === 10)
+		if (channel.type === 11 || channel.type === 12 || channel.type === 10) {
 			return true; // Thread types
+		}
 
 		// Fallback to isThread method if available (for runtime detection)
-		if (typeof channel.isThread === "function" && channel.isThread())
+		if (typeof channel.isThread === "function" && channel.isThread()) {
 			return true;
+		}
 
 		// If channel has messages property, assume it's messageable (test compatibility)
-		if (channel.messages && typeof channel.messages.fetch === "function")
+		if (channel.messages && typeof channel.messages.fetch === "function") {
 			return true;
+		}
 
 		return false;
 	}
@@ -80,13 +87,29 @@ export class DiscordBot {
 		interaction: ChatInputCommandInteraction,
 	): Promise<void> {
 		const { commandName, channel } = interaction;
+		let workingChannel = channel;
 
-		if (!this.isMessageableChannel(channel)) {
+		if (!workingChannel && interaction.channelId && interaction.guild) {
+			try {
+				const workingChannel = await interaction.guild.channels.fetch(
+					interaction.channelId,
+				);
+			} catch (error) {
+				console.error("Failed to fetch channel from guild:", error);
+			}
+		}
+
+		if (!this.isMessageableChannel(workingChannel)) {
 			await interaction.reply({
 				content: "❌ This command must be used in a text channel or thread",
 				ephemeral: true,
 			});
 			return;
+		}
+
+		// Update the interaction.channel for the command handlers
+		if (workingChannel !== channel) {
+			(interaction as any).channel = workingChannel;
 		}
 
 		try {
@@ -125,7 +148,6 @@ export class DiscordBot {
 		interaction: ChatInputCommandInteraction,
 	): Promise<void> {
 		const channel = interaction.channel as MessageableChannel;
-
 		await interaction.deferReply({ ephemeral: true });
 
 		try {
