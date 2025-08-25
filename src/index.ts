@@ -1,5 +1,4 @@
 import Database from 'better-sqlite3';
-import path from 'path';
 
 // Define interfaces for type safety
 interface RecallData {
@@ -46,7 +45,7 @@ class CFIARecallBot {
         INSERT INTO recalls (title, date, description, category, url)
         VALUES (?, ?, ?, ?, ?)
       `);
-      
+
       const result = stmt.run(
         recall.title,
         recall.date,
@@ -58,7 +57,10 @@ class CFIARecallBot {
       console.log(`✅ Added recall: ${recall.title}`);
       return result.lastInsertRowid as number;
     } catch (error) {
-      if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNIQUE constraint failed')
+      ) {
         console.log(`⚠️  Recall already exists: ${recall.title}`);
         return null;
       }
@@ -72,7 +74,7 @@ class CFIARecallBot {
       ORDER BY created_at DESC 
       LIMIT ?
     `);
-    
+
     return stmt.all(limit) as RecallData[];
   }
 
@@ -85,16 +87,16 @@ class CFIARecallBot {
 // Example usage and demonstration
 function main(): void {
   console.log('🚀 Starting CFIA Recall Bot...');
-  
+
   const bot = new CFIARecallBot();
 
   // Example recall data
   const exampleRecall: RecallData = {
-    title: "Test Recall - Contaminated Product",
+    title: 'Test Recall - Contaminated Product',
     date: new Date().toISOString().split('T')[0],
-    description: "This is a test recall for demonstration purposes",
-    category: "Food",
-    url: "https://recalls-rappels.canada.ca/en/alert-recall/test-recall"
+    description: 'This is a test recall for demonstration purposes',
+    category: 'Food',
+    url: 'https://recalls-rappels.canada.ca/en/alert-recall/test-recall',
   };
 
   // Add example recall

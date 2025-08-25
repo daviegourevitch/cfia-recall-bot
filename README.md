@@ -8,6 +8,8 @@ A TypeScript bot for monitoring Canadian Food Inspection Agency (CFIA) recalls w
 - 📊 **SQLite Database**: Stores and manages recall data locally
 - 🔄 **Type Safety**: Full TypeScript type definitions
 - 📋 **Recall Management**: Add, retrieve, and manage food recall information
+- ✨ **Code Quality Tools**: ESLint for linting, Prettier for formatting
+- 🚀 **Development Ready**: Pre-configured with best practices
 
 ## Requirements
 
@@ -43,12 +45,39 @@ Start the bot:
 yarn start
 ```
 
-### Type Checking
+### Code Quality
 
-Check TypeScript types without running:
+**Type Checking:**
 
 ```bash
 yarn type-check
+```
+
+**Linting:**
+
+```bash
+# Check for linting errors
+yarn lint
+
+# Fix linting errors automatically
+yarn lint:fix
+```
+
+**Formatting:**
+
+```bash
+# Format all files
+yarn format
+
+# Check if files are properly formatted
+yarn format:check
+```
+
+**Run All Checks:**
+
+```bash
+# Run type checking, linting, and format checking
+yarn check-all
 ```
 
 ### Build (Optional)
@@ -92,6 +121,8 @@ cfia-recall-bot/
 ├── src/
 │   └── index.ts          # Main application file
 ├── .gitignore            # Git ignore rules
+├── .prettierrc.json      # Prettier configuration
+├── eslint.config.js      # ESLint configuration
 ├── package.json          # Project configuration
 ├── tsconfig.json         # TypeScript configuration
 ├── README.md             # This file

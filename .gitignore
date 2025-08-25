@@ -42,6 +42,10 @@ coverage/
 *.swo
 *~
 
+# Linter and formatter cache
+.eslintcache
+.prettier-cache
+
 # OS generated files
 .DS_Store
 .DS_Store?
