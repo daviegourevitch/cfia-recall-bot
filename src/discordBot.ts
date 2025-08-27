@@ -564,18 +564,6 @@ export class DiscordBot {
 			statsMessage += `━━━━━━━━━━━━━━━━━━━━━━\n`;
 
 			const medals = ["🥇", "🥈", "🥉"];
-			const otherEmojis = [
-				"🏅",
-				"🎖️",
-				"🏵️",
-				"⭐",
-				"✨",
-				"💫",
-				"🌟",
-				"🔸",
-				"🔹",
-				"◆",
-			];
 
 			// Footer sections that will be added at the end
 			let funFactsSection = `\n🎯 **Fun Facts:**\n`;
@@ -605,21 +593,21 @@ export class DiscordBot {
 				funFactsSection.length + specialEmoji.length + footer.length;
 			const availableSpace = maxLength - statsMessage.length - reservedSpace;
 
-			// Add recall reasons until we run out of space
+			// Add recall reasons until we run out of space or reach top 20
 			let reasonsSection = "";
 			let truncated = false;
+			const maxEntries = 20; // Limit to top 20 entries
 
-			for (let i = 0; i < sortedReasons.length; i++) {
+			for (let i = 0; i < sortedReasons.length && i < maxEntries; i++) {
 				const [reason, count] = sortedReasons[i];
-				let emoji;
+				let emoji = "";
+				// Only show emojis for top 3 items
 				if (i < 3) {
-					emoji = medals[i];
-				} else {
-					emoji = otherEmojis[Math.min(i - 3, otherEmojis.length - 1)];
+					emoji = medals[i] + " ";
 				}
 
 				const percentage = ((count / totalRecallMessages) * 100).toFixed(1);
-				const reasonLine = `${emoji} **${reason}** - ${count} times (${percentage}%)\n`;
+				const reasonLine = `${emoji}**${reason}** - ${count} times (${percentage}%)\n`;
 
 				// Check if adding this reason would exceed our limit
 				if (reasonsSection.length + reasonLine.length + 50 > availableSpace) {
@@ -631,6 +619,12 @@ export class DiscordBot {
 				}
 
 				reasonsSection += reasonLine;
+			}
+
+			// Add truncation message if there are more than 20 reasons
+			if (!truncated && sortedReasons.length > maxEntries) {
+				const remainingReasons = sortedReasons.length - maxEntries;
+				reasonsSection += `\n📋 *...and ${remainingReasons} more reason${remainingReasons > 1 ? "s" : ""} not shown*`;
 			}
 
 			// Assemble the final message

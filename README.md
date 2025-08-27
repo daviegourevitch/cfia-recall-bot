@@ -179,13 +179,13 @@ Generates fun statistics about recall reasons from tracked messages. This comman
 - **Analyzes all messages**: Examines messages from the configured reporter user
 - **Parses recall text**: Searches for messages containing "recalled due to..." patterns
 - **Counts occurrences**: Tallies how often each recall reason appears
-- **Shows top reasons**: Displays results ranked by frequency with percentages
-- **Fun presentation**: Uses emojis, medals, and engaging formatting
+- **Shows top 20 reasons**: Displays only the top 20 most frequent recall reasons ranked by frequency with percentages
+- **Selective emoji formatting**: Uses medals (🥇🥈🥉) only for the top 3 items, with clean text formatting for the rest
 - **Smart matching**: Handles case-insensitive matching and text cleanup
 - **Example patterns**: "recalled due to Salmonella" → extracts "Salmonella"
 - **Special recognition**: Adds extra context for common food safety issues (Salmonella, Listeria, E. coli)
 - **Message length capping**: Automatically truncates long statistics to fit Discord's 2000 character limit while preserving the most important information
-- **Intelligent truncation**: When there are many recall reasons, shows top reasons first and indicates how many additional reasons were truncated
+- **Intelligent truncation**: When there are more than 20 recall reasons, shows top 20 and indicates how many additional reasons were not displayed
 
 The stats command provides insights into food recall patterns, helping identify the most common safety issues in tracked recall announcements.
 
